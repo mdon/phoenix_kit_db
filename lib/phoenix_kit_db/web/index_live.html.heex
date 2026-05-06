@@ -1,0 +1,142 @@
+<div class="container flex-col mx-auto px-4 py-6">
+    <.admin_page_header
+      back={PhoenixKit.Utils.Routes.path("/admin")}
+      title={Gettext.gettext(PhoenixKitWeb.Gettext, "DB")}
+      subtitle={Gettext.gettext(PhoenixKitWeb.Gettext, "Explore database tables and their contents")}
+    />
+
+    <%!-- Actions --%>
+    <div class="flex justify-end mb-6">
+      <.link
+        navigate={PhoenixKitDb.Paths.activity()}
+        class="btn btn-ghost btn-sm"
+      >
+        <.icon name="hero-signal" class="w-4 h-4 mr-2" /> {Gettext.gettext(
+          PhoenixKitWeb.Gettext,
+          "Live Activity"
+        )}
+      </.link>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-4">
+      <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">{Gettext.gettext(PhoenixKitWeb.Gettext, "Tables")}</div>
+        <div class="stat-value text-primary">
+          <.formatted_number number={@stats.table_count} />
+        </div>
+        <div class="stat-desc">{Gettext.gettext(PhoenixKitWeb.Gettext, "Application tables")}</div>
+      </div>
+      <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">{Gettext.gettext(PhoenixKitWeb.Gettext, "Rows")}</div>
+        <div class="stat-value text-secondary">
+          <.formatted_number number={@stats.approx_rows} format={:short} />
+        </div>
+        <div class="stat-desc">{Gettext.gettext(PhoenixKitWeb.Gettext, "Summed live tuples")}</div>
+      </div>
+      <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">{Gettext.gettext(PhoenixKitWeb.Gettext, "Tables Size")}</div>
+        <div class="stat-value text-accent"><.file_size bytes={@stats.total_size_bytes} /></div>
+        <div class="stat-desc">{Gettext.gettext(PhoenixKitWeb.Gettext, "App data + indexes")}</div>
+      </div>
+      <div class="stat bg-base-100 shadow rounded-box">
+        <div class="stat-title">{Gettext.gettext(PhoenixKitWeb.Gettext, "Database Size")}</div>
+        <div class="stat-value text-info"><.file_size bytes={@stats.database_size_bytes} /></div>
+        <div class="stat-desc">{Gettext.gettext(PhoenixKitWeb.Gettext, "Full pg_database_size")}</div>
+      </div>
+    </div>
+
+    <div class="bg-base-100 rounded-box shadow border border-base-200">
+      <div class="p-4 border-b border-base-200">
+        <.form for={%{}} phx-change="search">
+          <.input
+            name="search"
+            label={Gettext.gettext(PhoenixKitWeb.Gettext, "Search tables")}
+            value={@search}
+            placeholder={Gettext.gettext(PhoenixKitWeb.Gettext, "Filter by schema or table name")}
+            phx-debounce="300"
+          />
+        </.form>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>{Gettext.gettext(PhoenixKitWeb.Gettext, "Table")}</th>
+              <th class="text-right">{Gettext.gettext(PhoenixKitWeb.Gettext, "Rows")}</th>
+              <th class="text-right">{Gettext.gettext(PhoenixKitWeb.Gettext, "Size")}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= if Enum.empty?(@tables.entries) do %>
+              <tr>
+                <td colspan="4" class="text-center py-8 text-base-content/70">
+                  {Gettext.gettext(PhoenixKitWeb.Gettext, "No tables found.")}
+                </td>
+              </tr>
+            <% else %>
+              <%= for entry <- @tables.entries do %>
+                <tr class="hover">
+                  <td>
+                    <.link
+                      navigate={PhoenixKitDb.Paths.show(entry.schema, entry.name)}
+                      class="font-semibold link link-hover"
+                    >
+                      {entry.schema}.{entry.name}
+                    </.link>
+                  </td>
+                  <td class="text-right">
+                    <.formatted_number number={entry.approx_rows} format={:short} />
+                  </td>
+                  <td class="text-right text-base-content/70">
+                    <.file_size bytes={entry.size_bytes} />
+                  </td>
+                  <td class="text-right">
+                    <.link
+                      navigate={PhoenixKitDb.Paths.show(entry.schema, entry.name)}
+                      class="btn btn-ghost btn-sm"
+                    >
+                      <.icon name="hero-eye" class="w-4 h-4" />
+                    </.link>
+                  </td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-3 border-t border-base-200">
+        <div class="text-sm text-base-content/70">
+          {Gettext.gettext(PhoenixKitWeb.Gettext, "Page %{page} of %{total}",
+            page: @tables.page,
+            total: @tables.total_pages
+          )} • <.formatted_number number={@tables.total_entries} /> {Gettext.ngettext(
+            PhoenixKitWeb.Gettext,
+            "table",
+            "tables",
+            @tables.total_entries
+          )}
+        </div>
+        <div class="btn-group">
+          <button
+            class="btn btn-sm"
+            phx-click="change_page"
+            phx-value-page={@tables.page - 1}
+            disabled={@tables.page <= 1}
+          >
+            « {Gettext.gettext(PhoenixKitWeb.Gettext, "Prev")}
+          </button>
+          <button
+            class="btn btn-sm"
+            phx-click="change_page"
+            phx-value-page={@tables.page + 1}
+            disabled={@tables.page >= @tables.total_pages}
+          >
+            {Gettext.gettext(PhoenixKitWeb.Gettext, "Next")} »
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

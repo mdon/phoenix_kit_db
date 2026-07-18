@@ -140,7 +140,10 @@ Two version locations must stay in sync:
 1. `mix.exs` — the `@version` module attribute.
 2. `lib/phoenix_kit_db.ex` — `def version, do: "x.y.z"`.
 
-Releases (version bumps + CHANGELOG entries + `git tag` + `gh release create`) are boss-only — never auto-bump.
+Release checklist: bump both versions, add a `CHANGELOG.md` entry, run
+`mix precommit`, commit (`"Bump version to x.y.z"`) and push, then tag with the
+bare version (`git tag x.y.z && git push origin x.y.z`) and create a GitHub
+release via `gh release create`.
 
 ## Pre-commit
 
